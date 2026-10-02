@@ -1140,6 +1140,12 @@ wheels = [
 ]
 
 [[package]]
+name = "kmeans"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/7e/87d12a99d7ccfd2c85b19899012177e1718c2d6c0148fad421523160e84b/kmeans-1.0.2.tar.gz", hash = "sha256:96c4d7410bcd251e583eb2b817d133e678453d6ef7c5773f1263345eb47c24e2", size = 5860, upload-time = "2015-03-27T02:49:19.814Z" }
+
+[[package]]
 name = "lark"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1639,6 +1645,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "jupyter" },
+    { name = "kmeans" },
     { name = "matplotlib" },
     { name = "notebook" },
     { name = "pandas" },
@@ -1651,6 +1658,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "kmeans", specifier = ">=1.0.2" },
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "notebook", specifier = ">=7.6.3" },
     { name = "pandas", specifier = ">=3.0.6" },
