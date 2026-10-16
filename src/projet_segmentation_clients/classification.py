@@ -27,6 +27,9 @@ DROP_COLS = ["target", "cluster_kmeans", "cluster_dbscan",
 def prepare_data(df_clean, test_size=0.2, random_state=42):
     X = df_clean.drop(columns=[c for c in DROP_COLS if c in df_clean.columns])
     X = X.select_dtypes("number")
+    # Drop index-artifact columns (Unnamed: 0, Unnamed: 0.1, …) and CUST_ID
+    unnamed = [c for c in X.columns if c.startswith("Unnamed")]
+    X = X.drop(columns=unnamed + [c for c in ["CUST_ID"] if c in X.columns])
     y = df_clean["target"]
     return train_test_split(X, y, test_size=test_size, stratify=y, random_state=random_state)
 
@@ -71,15 +74,10 @@ def run_mlflow_training(X_train, X_test, y_train, y_test, experiment="classifica
             mlflow.log_metric("precision", prec)
             mlflow.log_metric("recall", rec)
             mlflow.log_metric("f1", f1)
-            mlflow.sklearn.log_model(pipe, "model")
-
-            fig, ax = plt.subplots()
-            sns.heatmap(confusion_matrix(y_test, pred), annot=True, fmt="d", cmap="Blues", ax=ax)
-            ax.set_title(name)
-            img_path = tmp_dir / ("cm_" + name.replace(" ", "_") + ".png")
-            fig.savefig(img_path)
-            plt.close(fig)
-            mlflow.log_artifact(str(img_path))
+            mlflow.sklearn.log_model(
+                pipe, "model",
+                skops_trusted_types=["sklearn.tree._tree.Tree"],
+            )
 
             report_path = tmp_dir / "report.txt"
             report_path.write_text(classification_report(y_test, pred))

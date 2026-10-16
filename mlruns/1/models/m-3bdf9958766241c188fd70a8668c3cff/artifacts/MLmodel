@@ -1,0 +1,24 @@
+artifact_path: /home/abd0id/PycharmProjects/projet-segmentation-clients/mlruns/1/models/m-3bdf9958766241c188fd70a8668c3cff/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.13.15
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - sklearn.tree._tree.Tree
+mlflow_version: 3.17.0
+model_id: m-3bdf9958766241c188fd70a8668c3cff
+model_size_bytes: 8203001
+model_uuid: m-3bdf9958766241c188fd70a8668c3cff
+prompts: null
+run_id: 7f5262927d444393aadf64b5c91750f8
+utc_time_created: '2026-10-15 16:10:24.844092'
