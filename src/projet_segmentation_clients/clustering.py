@@ -1,11 +1,12 @@
+import os
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score
 
 from preprocessing import PROCESSED_PATH
 
+# Human-readable names for each cluster number
 CLUSTER_NAMES = {
     0: "Premium Customers",
     1: "Low-Activity Customers",
@@ -20,11 +21,14 @@ def search_kmeans(X_full):
         for k in range(2, 8):
             km = KMeans(n_clusters=k, n_init=10, random_state=42)
             labels = km.fit_predict(X)
+            # silhouette_score measures how well-separated the clusters are (-1 to 1, higher is better)
             sil = silhouette_score(X, labels)
+            # bincount counts how many points are in each cluster, min_share checks the smallest cluster isn't too small
             min_share = np.bincount(labels).min() / len(labels)
             rows.append({"n": n, "k": k, "sil": sil, "min_share": min_share})
 
     res = pd.DataFrame(rows)
+    # Only keep results where the smallest cluster has at least 10% of the data
     good = res[res["min_share"] >= 0.10]
     best = good.sort_values("sil", ascending=False).iloc[0]
     n_best = int(best["n"])
@@ -44,6 +48,7 @@ def search_dbscan(X_full):
         for eps in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
             for ms in [5, 10, 20, 30]:
                 labels = DBSCAN(eps=eps, min_samples=ms).fit_predict(X)
+                # Count clusters (label -1 means noise, not a real cluster)
                 n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
                 if n_clusters < 2:
                     continue
@@ -68,6 +73,7 @@ def search_dbscan(X_full):
 
 
 def find_best_clusters(df_clean, df_pca):
+    # .values turns the dataframe into a plain numpy array
     X_full = df_pca.values
     df_clean = df_clean.copy()
 
@@ -82,12 +88,14 @@ def find_best_clusters(df_clean, df_pca):
     X_km = X_full[:, :km_n]
     km_sil = silhouette_score(X_km, km_labels)
 
+    # Compare KMeans and DBSCAN to pick the best clustering method
     use_dbscan = False
     if db is not None:
         X_db = X_full[:, :db_n]
         mask = db_labels != -1
         db_sil = silhouette_score(X_db[mask], db_labels[mask])
         db_noise = (db_labels == -1).mean()
+        # Use DBSCAN only if it's clearly better and has very little noise
         use_dbscan = (db_sil > km_sil + 0.05) and (db_noise < 0.05)
 
     if use_dbscan:
@@ -97,7 +105,9 @@ def find_best_clusters(df_clean, df_pca):
         df_clean["cluster_final"] = km_labels
         print("Chosen method: K-means")
 
+    # Map cluster numbers to human-readable names
     df_clean["target"] = df_clean["cluster_kmeans"].map(CLUSTER_NAMES)
+    # normalize=True shows percentages instead of raw counts
     print(df_clean["target"].value_counts(normalize=True).round(3))
 
     return df_clean
@@ -105,7 +115,8 @@ def find_best_clusters(df_clean, df_pca):
 
 def run(df_clean, df_pca, out_path=PROCESSED_PATH):
     df_clean = find_best_clusters(df_clean, df_pca)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Create the output folder if it doesn't exist yet
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     df_clean.to_csv(out_path, index=False)
     print("enriched data saved:", out_path)
     return df_clean

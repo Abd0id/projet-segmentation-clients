@@ -1,14 +1,13 @@
+import os
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-ROOT = Path(__file__).resolve().parents[2]
-
-RAW_PATH       = ROOT / "data" / "raw" / "dataset-6ab989b678d90892980305.csv"
-PROCESSED_PATH = ROOT / "data" / "processed" / "card_profiler_clean.csv"
-PCA_PATH       = ROOT / "data" / "PCA" / "card_profiler_clustering.csv"
+# Hardcoded paths to our data files
+RAW_PATH       = "../../data/raw/dataset-6ab989b678d90892980305.csv"
+PROCESSED_PATH = "../../data/processed/card_profiler_clean.csv"
+PCA_PATH       = "../../data/PCA/card_profiler_clustering.csv"
 
 NUMERIC_COLS = [
     "BALANCE", "PURCHASES", "ONEOFF_PURCHASES", "INSTALLMENTS_PURCHASES",
@@ -17,7 +16,8 @@ NUMERIC_COLS = [
 
 
 def load_and_clean(raw_path=RAW_PATH, out_path=PROCESSED_PATH):
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Create the folder for the output file if it doesn't exist yet
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     df = pd.read_csv(raw_path)
     df.dropna(subset=["CREDIT_LIMIT"], inplace=True)
     df.to_csv(out_path, index=False)
@@ -26,19 +26,24 @@ def load_and_clean(raw_path=RAW_PATH, out_path=PROCESSED_PATH):
 
 
 def apply_pca(df, out_path=PCA_PATH, variance_threshold=0.80):
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Create the folder for the output file if it doesn't exist yet
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     df_log = pd.DataFrame()
     for col in NUMERIC_COLS:
         if col in df.columns:
+            # log1p = log(1 + x), helps reduce the effect of very large values
             df_log[col + "_log"] = np.log1p(df[col])
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df_log)
 
+    # PCA reduces the number of columns while keeping the most important info
     pca_full = PCA()
     pca_full.fit(X_scaled)
+    # cumsum adds up the variance explained by each component one by one
     cumulative = np.cumsum(pca_full.explained_variance_ratio_)
+    # argmax finds the first component where we reach our variance threshold
     n_components = int(np.argmax(cumulative >= variance_threshold) + 1)
     print("number of PCA components:", n_components)
 
